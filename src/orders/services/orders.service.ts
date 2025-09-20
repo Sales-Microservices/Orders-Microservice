@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { OnModuleInit, HttpStatus } from '@nestjs/common';
 import { RpcException, ClientProxy } from '@nestjs/microservices';
 import { OrderPaginationDto, ChangeOrderStatusDto } from '../dto';
-import { PRODUCT_SERVICE } from 'src/config';
+import { NATS_SERVICES } from 'src/config';
 import { firstValueFrom } from 'rxjs';
 
 
@@ -15,13 +15,13 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
   private readonly logger = new Logger('Orders Service')
   constructor(
-    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy,
+    @Inject(NATS_SERVICES) private readonly productsClient: ClientProxy,
   ) {
     super()
   }
 
   async onModuleInit() {
-    await this.$connect();
+    await this.$connect()
     this.logger.log('Database is Connected ...')
   }
 
