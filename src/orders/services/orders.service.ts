@@ -4,7 +4,7 @@ import { UpdateOrderDto } from '../dto/update-order.dto';
 import { PrismaClient } from '@prisma/client';
 import { OnModuleInit, HttpStatus } from '@nestjs/common';
 import { RpcException, ClientProxy } from '@nestjs/microservices';
-import { OrderPaginationDto, ChangeOrderStatusDto } from '../dto';
+import { OrderPaginationDto, ChangeOrderStatusDto, PaidOrderDto } from '../dto';
 import { NATS_SERVICES } from 'src/config';
 import { firstValueFrom } from 'rxjs';
 import { OrderWithProducts } from '../interfaces/oders-with-products.interface';
@@ -186,6 +186,32 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     );
 
     return paymentSession;
+
+  }
+
+  async paidOrder(paidOrderDto: PaidOrderDto) {
+
+    this.logger.log('Order Paid');
+    this.logger.log(paidOrderDto);
+
+    const order = await this.order.update({
+      where: { id: paidOrderDto.orderId },
+      data: {
+        status: 'PAID',
+        paid: true,
+        paidAt: new Date(),
+        stripeChargeId: paidOrderDto.stripePaymentId,
+
+        // La relación
+        OrderReceipt: {
+          create: {
+            receiptUrl: paidOrderDto.receiptUrl
+          }
+        }
+      }
+    });
+
+    return order;
 
   }
 

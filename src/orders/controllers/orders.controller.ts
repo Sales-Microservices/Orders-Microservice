@@ -1,7 +1,7 @@
 import { Controller, ParseUUIDPipe } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { OrdersService } from '../services/orders.service';
-import { OrderPaginationDto, ChangeOrderStatusDto, CreateOrderDto } from '../dto';
+import { OrderPaginationDto, ChangeOrderStatusDto, CreateOrderDto, PaidOrderDto } from '../dto';
 import { OrderWithProducts } from '../interfaces/oders-with-products.interface';
 
 @Controller()
@@ -28,7 +28,12 @@ export class OrdersController {
   @MessagePattern('changeOrderStatus')
   changeOrderStatus(@Payload() changeOrderStatusDto: ChangeOrderStatusDto) {
     return this.ordersService.changeStatus(changeOrderStatusDto)
+  }
 
+
+  @EventPattern('payment.succeeded')
+  paidOrder(@Payload() paidOrderDto: PaidOrderDto) {
+    return this.ordersService.paidOrder(paidOrderDto);
   }
 
 
