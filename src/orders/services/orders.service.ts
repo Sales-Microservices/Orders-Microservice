@@ -7,6 +7,7 @@ import { RpcException, ClientProxy } from '@nestjs/microservices';
 import { OrderPaginationDto, ChangeOrderStatusDto } from '../dto';
 import { NATS_SERVICES } from 'src/config';
 import { firstValueFrom } from 'rxjs';
+import { OrderWithProducts } from '../interfaces/oders-with-products.interface';
 
 
 
@@ -15,7 +16,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
   private readonly logger = new Logger('Orders Service')
   constructor(
-    @Inject(NATS_SERVICES) private readonly productsClient: ClientProxy,
+    @Inject(NATS_SERVICES) private readonly client: ClientProxy,
   ) {
     super()
   }
@@ -30,7 +31,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       //1 Confirmar los ids de los productos
       const productIds = createOrderDto.items.map((item) => item.productId);
       const products: any[] = await firstValueFrom(
-        this.productsClient.send({ cmd: 'validateIds' }, productIds),
+        this.client.send({ cmd: 'validateIds' }, productIds),
       );
 
       //2. Cálculos de los valores
@@ -142,7 +143,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     const productIds = order.OrderItem.map((orderItem) => orderItem.productId);
     const products: any[] = await firstValueFrom(
-      this.productsClient.send({ cmd: 'validateIds' }, productIds),
+      this.client.send({ cmd: 'validateIds' }, productIds),
     );
 
     return {
@@ -171,5 +172,21 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
   }
 
+  async createPaymentSession(order: OrderWithProducts) {
+    const paymentSession = await firstValueFrom(
+      this.client.send('create-payment-session', {
+        orderId: order.id,
+        currency: 'usd',
+        items: order.OrderItem.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      }),
+    );
+
+    return paymentSession;
+
+  }
 
 }
